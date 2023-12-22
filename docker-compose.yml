@@ -58,7 +58,7 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
+      # - "443:443"
     volumes:
       - luyenthitoan:/var/www/html/luyenthitoan
       - dtutorials:/var/www/html/dtutorials
@@ -80,8 +80,8 @@ services:
       - /bin/sh
       - -c
       - |
-        certonly --webroot --webroot-path=/var/www/html/luyenthitoan --email trinhdungbk98@gmail.com --agree-tos --no-eff-email --force-renewal -d luyenthitoan.shop -d www.luyenthitoan.shop
-        certonly --webroot --webroot-path=/var/www/html/dtutorials --email trinhdungbk98@gmail.com --agree-tos --no-eff-email --force-renewal -d dtutorials.shop -d www.dtutorials.shop
+        certonly --webroot --webroot-path=/var/www/html/luyenthitoan --email trinhdungbk98@gmail.com --agree-tos --no-eff-email --staging -d luyenthitoan.shop -d www.luyenthitoan.shop
+        certonly --webroot --webroot-path=/var/www/html/dtutorials --email trinhdungbk98@gmail.com --agree-tos --no-eff-email --staging -d dtutorials.shop -d www.dtutorials.shop
 
 volumes:
   certbot-etc:
