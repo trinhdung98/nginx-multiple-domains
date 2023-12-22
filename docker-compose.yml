@@ -6,10 +6,89 @@ services:
     container_name: db
     restart: unless-stopped
     env_file: .env
-    environment:
-      - MYSQL_DATABASE=luyenthitoan
+    # ports:
+    #   - "3306:3306"
     volumes:
       - dbdata:/var/lib/mysql
+      - ./init_db:/docker-entrypoint-initdb.d
     command: "--default-authentication-plugin=mysql_native_password"
     networks:
       - app-network
+
+  luyenthitoan:
+    depends_on:
+      - db
+    image: wordpress:6.4-php8.2-fpm-alpine
+    container_name: luyenthitoan
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_USER=$MYSQL_USER
+      - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
+      - WORDPRESS_DB_NAME=luyenthitoan
+    volumes:
+      - luyenthitoan:/var/www/html
+    networks:
+      - app-network
+
+  dtutorials:
+    depends_on:
+      - db
+    image: wordpress:6.4-php8.2-fpm-alpine
+    container_name: dtutorials
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_USER=$MYSQL_USER
+      - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
+      - WORDPRESS_DB_NAME=dtutorials
+    volumes:
+      - dtutorials:/var/www/html
+    networks:
+      - app-network
+
+  webserver:
+    depends_on:
+      - luyenthitoan
+      - dtutorials
+    image: nginx:1.15.12-alpine
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - luyenthitoan:/var/www/html/luyenthitoan
+      - dtutorials:/var/www/html/dtutorials
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+    networks:
+      - app-network
+
+  certbot:
+    depends_on:
+      - webserver
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - luyenthitoan:/var/www/html/luyenthitoan
+      - dtutorials:/var/www/html/dtutorials
+    command:
+      - /bin/sh
+      - -c
+      - |
+        certonly --webroot --webroot-path=/var/www/luyenthitoan --email trinhdungbk98@gmail.com --agree-tos --no-eff-email --staging -d luyenthitoan.shop -d www.luyenthitoan.shop
+        certonly --webroot --webroot-path=/var/www/html/dtutorials --email trinhdungbk98@gmail.com --agree-tos --no-eff-email --staging -d dtutorials.shop -d www.dtutorials.shop
+
+volumes:
+  certbot-etc:
+  luyenthitoan:
+  dtutorials:
+  dbdata:
+
+networks:
+  app-network:
+    driver: bridge
